@@ -1,0 +1,33 @@
+{
+  "type": "AdaptiveCard",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "${name}",
+      "weight": "Bolder",
+      "size": "Medium",
+      "wrap": true
+    },
+    {
+      "type": "Image",
+      "url": "${image}",
+      "size": "Medium",
+      "style": "default",
+      "width": "150px",
+      "height": "150px",
+      "horizontalAlignment": "Center"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Release Date: ${releaseDate}",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Price: ${price}",
+      "wrap": true
+    }
+  ],
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.3"
+}
