@@ -13,7 +13,7 @@
       "url": "${image}",
       "size": "Medium",
       "style": "default",
-      "width": "150px",
+      "width": "215px",
       "height": "150px",
       "horizontalAlignment": "Center"
     },
