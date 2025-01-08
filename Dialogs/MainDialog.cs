@@ -135,7 +135,7 @@ namespace SnkrBot.Dialogs
                                 maxPrice = Convert.ToDouble(match.Value);
                             }
                         }
-                        Console.WriteLine($"Prezzo: {maxPrice}");
+
                         if (maxPrice == null)
                         {
                             await stepContext.Context.SendActivityAsync(
@@ -150,6 +150,34 @@ namespace SnkrBot.Dialogs
                             MaxPrice = maxPrice
                         };
                         return await stepContext.BeginDialogAsync(nameof(ShoeDialog), priceFilterDetails, cancellationToken);
+
+                    case ShoeRecognizerResult.Intent.ContinueOrExit:
+                        // Trova la risposta nelle entità (se presenti)
+                        var responseEntity = cluResult.Result?.Prediction.Entities?
+                            .FirstOrDefault(e => string.Equals(e.Category, "PositiveReply", StringComparison.OrdinalIgnoreCase)
+                                                 || string.Equals(e.Category, "NegativeReply", StringComparison.OrdinalIgnoreCase));
+
+                        if (responseEntity != null)
+                        {
+                            if (responseEntity.Category.Equals("PositiveReply", StringComparison.OrdinalIgnoreCase))
+                            {
+                                await stepContext.Context.SendActivityAsync(MessageFactory.Text("Perfetto! Come posso aiutarti ancora?"), cancellationToken);
+                                return await stepContext.ReplaceDialogAsync(InitialDialogId, null, cancellationToken);
+                            }
+                            else if (responseEntity.Category.Equals("NegativeReply", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Console.WriteLine("Risposta negativa");
+                                await stepContext.Context.SendActivityAsync(MessageFactory.Text("Va bene! Se hai bisogno di aiuto, sono qui. Arrivederci!"), cancellationToken);
+                                return await stepContext.EndDialogAsync(null, cancellationToken);
+                            }
+                        }
+
+                        // Caso di fallback se l'entità non è trovata o non è gestita
+                        await stepContext.Context.SendActivityAsync(
+                            MessageFactory.Text("Non ho capito la tua risposta. Puoi ripetere?"),
+                            cancellationToken);
+                        return await stepContext.ReplaceDialogAsync(InitialDialogId, null, cancellationToken);
+
 
                     default:
                         await stepContext.Context.SendActivityAsync(

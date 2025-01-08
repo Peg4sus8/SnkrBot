@@ -25,6 +25,7 @@ namespace SnkrBot.CognitiveModels
                 ShowAllShoes,
                 FilterByBrand,
                 FilterByPrice,
+                ContinueOrExit,
                 None
             }
 
@@ -46,8 +47,8 @@ namespace SnkrBot.CognitiveModels
 
 
                     // Log per il debug
-                    Console.WriteLine($"Query: {Result.Query}");
-                    Console.WriteLine($"Prediction: {JsonConvert.SerializeObject(Result?.Prediction, Formatting.Indented)}");
+                    //Console.WriteLine($"Query: {Result.Query}");
+                    //Console.WriteLine($"Prediction: {JsonConvert.SerializeObject(Result?.Prediction, Formatting.Indented)}");
                 }
                 catch (Exception ex)
                 {
