@@ -57,6 +57,7 @@ jobs:
         uses: azure/login@v2
         with:
           managed-identity: true
+          creds: ${{ secrets.SnkrBot_App_SPN }}
 
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v2
