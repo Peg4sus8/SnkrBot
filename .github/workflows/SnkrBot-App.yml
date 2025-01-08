@@ -53,20 +53,11 @@ jobs:
         name: webapp
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
-    # Step per installare Azure CLI
-    - name: Install Azure CLI on Windows
-      run: |
-        msiexec.exe /i https://aka.ms/InstallAzureCliWindows.msi /quiet
-
-    # Step per verificare la versione di Azure CLI
-    - name: Check Azure CLI Version
-      run: az --version
-
-    # Step per effettuare il login ad Azure
-    - name: Login to Azure
+    # Step per il login ad Azure usando Managed Identity
+    - name: Login to Azure using Managed Identity
       uses: azure/login@v2
       with:
-        creds: ${{ secrets.SnkrBot_App_SPN }}
+        managed-identity: true
 
     # Step per distribuire l'applicazione Web su Azure
     - name: Deploy to Azure WebApp
