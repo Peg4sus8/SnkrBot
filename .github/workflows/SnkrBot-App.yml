@@ -1,50 +1,74 @@
 name: Compila e distribuisci applicazione .NET Core nell'app Web SnkrBot-App
+
 on:
   push:
     branches:
-    - master
+      - master
+
 env:
   AZURE_WEBAPP_NAME: SnkrBot-App
   AZURE_WEBAPP_PACKAGE_PATH: .\published
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 6.0.x
   WORKING_DIRECTORY: .
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v1.8.0
       with:
-        include-prerelease: True
         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
-    - name: Restore
+        include-prerelease: true
+
+    - name: Restore dependencies
       run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
-    - name: Build
+
+    - name: Build project
       run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
-    - name: Test
+
+    - name: Run tests
       run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build
-    - name: Publish
+
+    - name: Publish project
       run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
-    - name: Publish Artifacts
+
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: webapp
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
   deploy:
     runs-on: windows-latest
     needs: build
     steps:
-    - name: Download artifact from build job
+    - name: Download artifacts from build
       uses: actions/download-artifact@v4
       with:
         name: webapp
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-    - name: Azure Login
+
+    # Step per installare Azure CLI
+    - name: Install Azure CLI on Windows
+      run: |
+        msiexec.exe /i https://aka.ms/InstallAzureCliWindows.msi /quiet
+
+    # Step per verificare la versione di Azure CLI
+    - name: Check Azure CLI Version
+      run: az --version
+
+    # Step per effettuare il login ad Azure
+    - name: Login to Azure
       uses: azure/login@v2
       with:
         creds: ${{ secrets.SnkrBot_App_SPN }}
+
+    # Step per distribuire l'applicazione Web su Azure
     - name: Deploy to Azure WebApp
       uses: azure/webapps-deploy@v2
       with:
