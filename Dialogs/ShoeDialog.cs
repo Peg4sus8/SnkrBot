@@ -39,13 +39,11 @@ namespace SnkrBot.Dialogs
         {
             try
             {
-                var filterDetails = (FilterDetails)stepContext.Options ?? new FilterDetails();
+                // Cast di stepContext.Options a FilterDetails
+                var filterDetails = stepContext.Options as FilterDetails ?? new FilterDetails();
 
-                // Usa il service per ottenere le scarpe filtrate
-                var shoes = await _shoeService.GetFilteredShoesAsync(
-                    filterDetails.Brand,
-                    filterDetails.MinPrice,
-                    filterDetails.MaxPrice);
+                // Usa il servizio per ottenere le scarpe filtrate
+                var shoes = await _shoeService.GetFilteredShoesAsync(filterDetails.Brand, filterDetails.MaxPrice);
 
                 if (!shoes.Any())
                 {
@@ -71,6 +69,7 @@ namespace SnkrBot.Dialogs
 
             return await stepContext.EndDialogAsync(null, cancellationToken);
         }
+
 
         private Attachment CreateShoeCard(Shoe shoe)
         {

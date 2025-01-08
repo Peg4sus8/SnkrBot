@@ -57,7 +57,7 @@ namespace SnkrBot.Dialogs
                 "Ciao! Sono il tuo assistente per la ricerca di scarpe. Posso aiutarti a:\n" +
                 "- Vedere tutte le scarpe disponibili\n" +
                 "- Cercare scarpe di un brand specifico (es. 'Mostrami le Nike')\n" +
-                "- Cercare scarpe in un range di prezzo (es. 'Scarpe sotto i 200€' o 'Scarpe tra 100€ e 300€')\n" +
+                "- Cercare scarpe in un range di prezzo (es. 'Scarpe di massimo 200€')\n" +
                 "Come posso aiutarti?";
 
             var promptMessage = MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput);
@@ -101,8 +101,8 @@ namespace SnkrBot.Dialogs
                         return await stepContext.BeginDialogAsync(nameof(ShoeDialog), null, cancellationToken);
 
                     case ShoeRecognizerResult.Intent.FilterByBrand:
-                        var brandEntity = cluResult.Result?.Prediction?.Entities?.FirstOrDefault(e => e.Category.Equals("Brand", StringComparison.OrdinalIgnoreCase));
-                        var brand = brandEntity?.Text;
+                        var brand = cluResult.Result?.Prediction?.Entities?
+                            .FirstOrDefault(e => e.Category.Equals("Brand", StringComparison.OrdinalIgnoreCase))?.Text;
 
                         if (string.IsNullOrEmpty(brand))
                         {
@@ -110,20 +110,32 @@ namespace SnkrBot.Dialogs
                             return await stepContext.ReplaceDialogAsync(InitialDialogId, null, cancellationToken);
                         }
 
-                        return await stepContext.BeginDialogAsync(nameof(ShoeDialog), new { Filter = "brand", Brand = brand }, cancellationToken);
+                        var brandFilterDetails = new FilterDetails
+                        {
+                            Filter = "brand",
+                            Brand = brand
+                        };
+
+                        return await stepContext.BeginDialogAsync(nameof(ShoeDialog), brandFilterDetails, cancellationToken);
+
 
                     case ShoeRecognizerResult.Intent.FilterByPrice:
-                        // Estrai l'entità relativa al prezzo
-                        var priceEntity = cluResult.Result?.Prediction?.Entities?
-                            .FirstOrDefault(e => e.Category.Equals("Price", StringComparison.OrdinalIgnoreCase));
+                        var priceEntity = cluResult.Result?.Prediction.Entities?.FirstOrDefault(e => e.Category == "Prezzi");
 
-                        // Recupera il valore del prezzo massimo
+                        // Estrai il testo del prezzo e prova a convertirlo in un valore numerico
                         double? maxPrice = null;
-                        if (priceEntity != null && double.TryParse(priceEntity.Text, out var parsedPrice))
+                        if (priceEntity != null)
                         {
-                            maxPrice = parsedPrice;
+                            // Usa una regex per estrarre il numero dal testo
+                            var priceText = priceEntity.Text;
+                            var match = System.Text.RegularExpressions.Regex.Match(priceText, @"\d+");
+                            if (match.Success)
+                            {
+                                // Converti il numero trovato in double
+                                maxPrice = Convert.ToDouble(match.Value);
+                            }
                         }
-
+                        Console.WriteLine($"Prezzo: {maxPrice}");
                         if (maxPrice == null)
                         {
                             await stepContext.Context.SendActivityAsync(
@@ -132,7 +144,12 @@ namespace SnkrBot.Dialogs
                             return await stepContext.ReplaceDialogAsync(InitialDialogId, null, cancellationToken);
                         }
 
-                        return await stepContext.BeginDialogAsync(nameof(ShoeDialog), new { Filter = "price", MaxPrice = maxPrice }, cancellationToken);
+                        var priceFilterDetails = new FilterDetails
+                        {
+                            Filter = "price",
+                            MaxPrice = maxPrice
+                        };
+                        return await stepContext.BeginDialogAsync(nameof(ShoeDialog), priceFilterDetails, cancellationToken);
 
                     default:
                         await stepContext.Context.SendActivityAsync(

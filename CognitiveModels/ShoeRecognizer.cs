@@ -49,11 +49,7 @@ namespace SnkrBot.CognitiveModels
                 throw new ArgumentException($"Endpoint URL non valido: {_endpointUrl}");
             }
 
-            Console.WriteLine($"Endpoint URL: {_endpointUrl}");
-            Console.WriteLine($"API Key: {_apiKey}");
-            Console.WriteLine($"Project Name: {_projectName}");
-            Console.WriteLine($"Deployment Name: {_deploymentName}");
-            Console.WriteLine($"Subscription ID: {_subscriptionCode}");
+           
         }
 
         public async Task<ShoeRecognizerResult> RecognizeAsync(ITurnContext turnContext, CancellationToken cancellationToken)
@@ -90,32 +86,29 @@ namespace SnkrBot.CognitiveModels
 
             try
             {
-                Console.WriteLine("Inviando richiesta a CLU...");
+               /* Console.WriteLine("Inviando richiesta a CLU...");
                 Console.WriteLine($"URL: {requestUrl}");
                 Console.WriteLine($"Body: {System.Text.Json.JsonSerializer.Serialize(requestBody, new JsonSerializerOptions { WriteIndented = true })}");
-
+               */
                 var response = await httpClient.PostAsync(
                     requestUrl,
                     new StringContent(System.Text.Json.JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json"));
 
                 var responseBody = await response.Content.ReadAsStringAsync();
 
-                Console.WriteLine("Risposta ricevuta da CLU:");
-                Console.WriteLine(responseBody);
+               /* Console.WriteLine("Risposta ricevuta da CLU:");
+                Console.WriteLine(responseBody);*/
 
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new Exception($"Errore nella risposta CLU: {response.StatusCode} - {responseBody}");
                 }
 
-                // Aggiungi log per verificare la deserializzazione
-                Console.WriteLine("Deserializzando la risposta in ShoeRecognizerResult...");
-
                 dynamic result = JsonConvert.DeserializeObject<dynamic>(responseBody);
                 var shoeRecognizerResult = new ShoeRecognizerResult();
                 shoeRecognizerResult.Convert(result); // Chiama il metodo Convert per trasformare il risultato
 
-                Console.WriteLine($"Risultato deserializzato: {result}");
+                //Console.WriteLine($"Risultato deserializzato: {result}");
 
                 return shoeRecognizerResult;
                 //return System.Text.Json.JsonSerializer.Deserialize<ShoeRecognizerResult>(responseBody);
@@ -126,27 +119,6 @@ namespace SnkrBot.CognitiveModels
                 throw;
             }
         }
-
-        /*public async Task<ShoeRecognizerResult> RecognizeAsync(ITurnContext turnContext, CancellationToken cancellationToken)
-        {
-            try
-            {
-                // Utilizziamo il CluRecognizer per analizzare la richiesta
-                Console.WriteLine("Eseguendo l'analisi tramite CluRecognizer...");
-                var result = await _recognizer.RecognizeAsync(turnContext, cancellationToken);
-
-                Console.WriteLine("Risultato ottenuto dal CLU:");
-                Console.WriteLine(result.Text);
-
-                // Conversione in ShoeRecognizerResult
-                return ShoeRecognizerResult.FromRecognizerResult(result);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Errore durante l'analisi con CLU: {ex.Message}");
-                throw;
-            }
-        }*/
 
         public bool IsConfigured()
         {
