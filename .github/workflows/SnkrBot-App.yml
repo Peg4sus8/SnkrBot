@@ -44,24 +44,22 @@ jobs:
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
   deploy:
-    runs-on: windows-latest
-    needs: build
-    steps:
-    - name: Download artifacts from build
-      uses: actions/download-artifact@v4
-      with:
-        name: webapp
-        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+      runs-on: ubuntu-latest
+      needs: build
+      steps:
+      - name: Download artifacts from build
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp
+          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
-    # Step per il login ad Azure usando Managed Identity
-    - name: Login to Azure using Managed Identity
-      uses: azure/login@v2
-      with:
-        managed-identity: true
+      - name: Login to Azure using Managed Identity
+        uses: azure/login@v2
+        with:
+          managed-identity: true
 
-    # Step per distribuire l'applicazione Web su Azure
-    - name: Deploy to Azure WebApp
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+      - name: Deploy to Azure WebApp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
