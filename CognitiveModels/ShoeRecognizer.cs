@@ -7,6 +7,8 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Microsoft.BotBuilderSamples.Clu;
+using Newtonsoft.Json;
+using SnkrBot.CognitiveModels.SnkrBot.CognitiveModels;
 
 namespace SnkrBot.CognitiveModels
 {
@@ -90,11 +92,11 @@ namespace SnkrBot.CognitiveModels
             {
                 Console.WriteLine("Inviando richiesta a CLU...");
                 Console.WriteLine($"URL: {requestUrl}");
-                Console.WriteLine($"Body: {JsonSerializer.Serialize(requestBody, new JsonSerializerOptions { WriteIndented = true })}");
+                Console.WriteLine($"Body: {System.Text.Json.JsonSerializer.Serialize(requestBody, new JsonSerializerOptions { WriteIndented = true })}");
 
                 var response = await httpClient.PostAsync(
                     requestUrl,
-                    new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json"));
+                    new StringContent(System.Text.Json.JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json"));
 
                 var responseBody = await response.Content.ReadAsStringAsync();
 
@@ -106,7 +108,17 @@ namespace SnkrBot.CognitiveModels
                     throw new Exception($"Errore nella risposta CLU: {response.StatusCode} - {responseBody}");
                 }
 
-                return JsonSerializer.Deserialize<ShoeRecognizerResult>(responseBody);
+                // Aggiungi log per verificare la deserializzazione
+                Console.WriteLine("Deserializzando la risposta in ShoeRecognizerResult...");
+
+                dynamic result = JsonConvert.DeserializeObject<dynamic>(responseBody);
+                var shoeRecognizerResult = new ShoeRecognizerResult();
+                shoeRecognizerResult.Convert(result); // Chiama il metodo Convert per trasformare il risultato
+
+                Console.WriteLine($"Risultato deserializzato: {result}");
+
+                return shoeRecognizerResult;
+                //return System.Text.Json.JsonSerializer.Deserialize<ShoeRecognizerResult>(responseBody);
             }
             catch (Exception ex)
             {

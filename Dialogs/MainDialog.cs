@@ -9,7 +9,9 @@ using Microsoft.Bot.Builder.Dialogs.Choices;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using SnkrBot.CognitiveModels;
+using SnkrBot.CognitiveModels.SnkrBot.CognitiveModels;
 using SnkrBot.Models;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -83,7 +85,9 @@ namespace SnkrBot.Dialogs
                     return await stepContext.ReplaceDialogAsync(InitialDialogId, null, cancellationToken);
                 }
 
-                var (intent, score) = cluResult.TopIntent();
+                (ShoeRecognizerResult.Intent intent, double score) = cluResult.TopIntent();
+                Console.WriteLine($"Intent rilevato: {intent}, Punteggio: {score}");
+
                 if (string.IsNullOrEmpty(intent.ToString()))
                 {
                     await stepContext.Context.SendActivityAsync(MessageFactory.Text("Non ho capito la tua richiesta. Puoi riprovare?"), cancellationToken);
@@ -97,29 +101,46 @@ namespace SnkrBot.Dialogs
                         return await stepContext.BeginDialogAsync(nameof(ShoeDialog), null, cancellationToken);
 
                     case ShoeRecognizerResult.Intent.FilterByBrand:
-                        var brand = cluResult.Entities?.Brand?.FirstOrDefault();
+                        var brandEntity = cluResult.Result?.Prediction?.Entities?.FirstOrDefault(e => e.Category.Equals("Brand", StringComparison.OrdinalIgnoreCase));
+                        var brand = brandEntity?.Text;
+
                         if (string.IsNullOrEmpty(brand))
                         {
                             await stepContext.Context.SendActivityAsync(MessageFactory.Text("Non ho trovato il brand specificato. Puoi riprovare?"), cancellationToken);
                             return await stepContext.ReplaceDialogAsync(InitialDialogId, null, cancellationToken);
                         }
+
                         return await stepContext.BeginDialogAsync(nameof(ShoeDialog), new { Filter = "brand", Brand = brand }, cancellationToken);
 
                     case ShoeRecognizerResult.Intent.FilterByPrice:
-                        var maxPrice = cluResult.Entities?.Price?.FirstOrDefault();
+                        // Estrai l'entità relativa al prezzo
+                        var priceEntity = cluResult.Result?.Prediction?.Entities?
+                            .FirstOrDefault(e => e.Category.Equals("Price", StringComparison.OrdinalIgnoreCase));
+
+                        // Recupera il valore del prezzo massimo
+                        double? maxPrice = null;
+                        if (priceEntity != null && double.TryParse(priceEntity.Text, out var parsedPrice))
+                        {
+                            maxPrice = parsedPrice;
+                        }
+
                         if (maxPrice == null)
                         {
-                            await stepContext.Context.SendActivityAsync(MessageFactory.Text("Non ho trovato il prezzo specificato. Puoi riprovare?"), cancellationToken);
+                            await stepContext.Context.SendActivityAsync(
+                                MessageFactory.Text("Non ho trovato il prezzo specificato. Puoi riprovare?"),
+                                cancellationToken);
                             return await stepContext.ReplaceDialogAsync(InitialDialogId, null, cancellationToken);
                         }
+
                         return await stepContext.BeginDialogAsync(nameof(ShoeDialog), new { Filter = "price", MaxPrice = maxPrice }, cancellationToken);
 
                     default:
                         await stepContext.Context.SendActivityAsync(
-                            MessageFactory.Text("Non sono sicuro di cosa intendi. Puoi riprovare?"), cancellationToken);
+                            MessageFactory.Text("Non sono sicuro di cosa intendi. Puoi riprovare?"),
+                            cancellationToken);
                         break;
-
                 }
+
             }
             catch (Exception ex)
             {

@@ -3,128 +3,106 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Bot.Builder;
 using Newtonsoft.Json;
+ using Newtonsoft.Json.Linq;
 
 namespace SnkrBot.CognitiveModels
 {
-    public class ShoeRecognizerResult : IRecognizerConvert
+
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Microsoft.Bot.Builder;
+    using Microsoft.Bot.Schema;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+
+    namespace SnkrBot.CognitiveModels
     {
-        public enum Intent
+        public class ShoeRecognizerResult : IRecognizerConvert
         {
-            ShowAllShoes,
-            FilterByBrand,
-            FilterByPrice,
-            None
-        }
-
-        public string Text { get; set; }
-        public string AlteredText { get; set; }
-        public Dictionary<Intent, IntentScore> Intents { get; set; }
-        public ShoeEntities Entities { get; set; }
-
-        public void Convert(dynamic result)
-        {
-            try
+            public enum Intent
             {
-                var jsonResult = JsonConvert.SerializeObject(result);
-                var app = JsonConvert.DeserializeObject<ShoeRecognizerResult>(jsonResult);
-
-                Text = app.Text;
-                AlteredText = app.AlteredText;
-                Intents = app.Intents ?? new Dictionary<Intent, IntentScore>();
-                Entities = app.Entities ?? new ShoeEntities();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Errore durante la conversione: {ex.Message}");
-                throw;
-            }
-        }
-
-        public (Intent intent, double score) TopIntent()
-        {
-            if (Intents == null || !Intents.Any())
-            {
-                Console.WriteLine("Nessun intento trovato.");
-                return (Intent.None, 0.0);
+                ShowAllShoes,
+                FilterByBrand,
+                FilterByPrice,
+                None
             }
 
-            var maxIntent = Intent.None;
-            var maxScore = 0.0;
+            public string Kind { get; set; } // Mappa "kind" dal JSON
+            public ResultData Result { get; set; } // Mappa "result" dal JSON
 
-            foreach (var entry in Intents)
+            public void Convert(dynamic result)
             {
-                if (entry.Value.Score > maxScore)
+                try
                 {
-                    maxIntent = entry.Key;
-                    maxScore = entry.Value.Score;
+                    // Log del JSON originale
+                    Console.WriteLine("JSON ricevuto:\n" + JsonConvert.SerializeObject(result, Formatting.Indented));
+
+                    // Deserializza il JSON nella classe ShoeRecognizerResult
+                    var deserialized = JsonConvert.DeserializeObject<ShoeRecognizerResult>(JsonConvert.SerializeObject(result));
+
+                    Kind = deserialized.Kind;
+                    Result = deserialized.Result;
+
+
+                    // Log per il debug
+                    Console.WriteLine($"Query: {Result.Query}");
+                    Console.WriteLine($"Prediction: {JsonConvert.SerializeObject(Result?.Prediction, Formatting.Indented)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Errore durante la conversione: {ex.Message}");
+                    throw;
                 }
             }
 
-            Console.WriteLine($"Top Intent: {maxIntent}, Score: {maxScore}");
-            return (maxIntent, maxScore);
-        }
-
-        public static ShoeRecognizerResult FromRecognizerResult(RecognizerResult result)
-        {
-            try
+            public (Intent intent, double score) TopIntent()
             {
-                return new ShoeRecognizerResult
+                if (Result?.Prediction?.Intents == null || !Result.Prediction.Intents.Any())
                 {
-                    Text = result.Text,
-                    AlteredText = result.AlteredText,
-                    Intents = result.Intents?.ToDictionary(
-                        intent => Enum.TryParse(typeof(ShoeRecognizerResult.Intent), intent.Key, out var parsedIntent)
-                            ? (ShoeRecognizerResult.Intent)parsedIntent
-                            : Intent.None,
-                        intent => new IntentScore { Score = (double)(intent.Value.Score ?? 0.0) }
-                    ) ?? new Dictionary<Intent, IntentScore>(),
-                    Entities = JsonConvert.DeserializeObject<ShoeEntities>(JsonConvert.SerializeObject(result.Entities)) ?? new ShoeEntities()
-                };
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Errore durante la deserializzazione del RecognizerResult: {ex.Message}");
-                throw;
+                    Console.WriteLine("Nessun intento trovato.");
+                    return (Intent.None, 0.0);
+                }
+
+                // Trova l'intento con il punteggio più alto
+                var topIntent = Result.Prediction.Intents.OrderByDescending(i => i.ConfidenceScore).First();
+
+                // Mappa la categoria dell'intento all'enum `Intent`
+                if (Enum.TryParse(topIntent.Category, true, out Intent mappedIntent))
+                {
+                    return (mappedIntent, topIntent.ConfidenceScore);
+                }
+
+                return (Intent.None, 0.0);
             }
         }
-    }
-
-    public class IntentScore
-    {
-        public double Score { get; set; }
-    }
-
-    public class ShoeEntities
-    {
-        public string[] Brand { get; set; }
-
-        [JsonProperty("number")]
-        public double[] Price { get; set; }
-
-        [JsonProperty("priceOperator")]
-        public string[] PriceOperators { get; set; }
-
-        public (double? minPrice, double? maxPrice) GetPriceRange()
+        public class ResultData
         {
-            if (Price == null || !Price.Any()) return (null, null);
-
-            var priceOp = PriceOperators?.FirstOrDefault()?.ToLower() ?? "";
-
-            switch (priceOp)
-            {
-                case "sotto":
-                case "meno di":
-                    return (null, Price[0]);
-                case "sopra":
-                case "più di":
-                    return (Price[0], null);
-                case "tra":
-                    if (Price.Length >= 2)
-                        return (Price[0], Price[1]);
-                    break;
-            }
-
-            return (null, null);
+            public string Query { get; set; } // Mappa "query" dal JSON
+            public PredictionResult Prediction { get; set; } // Mappa "prediction" dal JSON
         }
+
+        public class PredictionResult
+        {
+            public string TopIntent { get; set; } // Mappa a "topIntent" nel JSON
+            public List<PredictedIntent> Intents { get; set; } // Mappa a "intents" nel JSON
+            public List<Entity> Entities { get; set; } // Mappa a "entities" nel JSON
+        }
+        public class Entity
+        {
+            public string Category { get; set; } // Mappa "category" dal JSON
+            public string Text { get; set; } // Mappa "text" dal JSON
+            public int Offset { get; set; } // Mappa "offset" dal JSON
+            public int Length { get; set; } // Mappa "length" dal JSON
+            public double ConfidenceScore { get; set; } // Mappa "confidenceScore" dal JSON
+        }
+
+        public class PredictedIntent
+        {
+            public string Category { get; set; } // Mappa a "category" nel JSON
+            public double ConfidenceScore { get; set; } // Mappa a "confidenceScore" nel JSON
+        }
+
     }
+
 }
