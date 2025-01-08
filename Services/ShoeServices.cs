@@ -60,8 +60,11 @@ namespace SnkrBot.Services
             catch (Exception ex)
             {
                 // Se lo scraping fallisce, prova a caricare dal CSV
-                _cachedShoes = await LoadFromCsvAsync() ?? new List<Shoe>();
-                throw new Exception($"Error updating shoes data: {ex.Message}");
+                _cachedShoes = await LoadFromCsvAsync();
+                if (!_cachedShoes.Any())
+                {
+                    throw new Exception($"Error updating shoes data and no backup data available: {ex.Message}");
+                }
             }
         }
 
@@ -79,26 +82,40 @@ namespace SnkrBot.Services
 
             using var reader = new StreamReader(_csvPath);
             using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-            return await csv.GetRecordsAsync<Shoe>().ToListAsync();
+
+            // Leggi i record in modo sincrono ma wrappa in Task per mantenere l'interfaccia asincrona
+            return await Task.FromResult(csv.GetRecords<Shoe>().ToList());
         }
 
         private List<Shoe> FilterShoes(List<Shoe> shoes, string brand, decimal? minPrice, decimal? maxPrice)
         {
-            var query = shoes.AsQueryable();
+            // Converti la lista in IQueryable per operazioni LINQ
+            IEnumerable<Shoe> query = shoes;
 
+            // Filtra per brand
             if (!string.IsNullOrEmpty(brand))
             {
                 query = query.Where(s => s.Name.Contains(brand, StringComparison.OrdinalIgnoreCase));
             }
 
+            // Filtra per prezzo minimo
             if (minPrice.HasValue)
             {
-                query = query.Where(s => ParsePrice(s.Price) >= minPrice.Value);
+                query = query.Where(s =>
+                {
+                    var price = ParsePrice(s.Price);
+                    return price > 0 && price >= minPrice.Value;
+                });
             }
 
+            // Filtra per prezzo massimo
             if (maxPrice.HasValue)
             {
-                query = query.Where(s => ParsePrice(s.Price) <= maxPrice.Value);
+                query = query.Where(s =>
+                {
+                    var price = ParsePrice(s.Price);
+                    return price > 0 && price <= maxPrice.Value;
+                });
             }
 
             return query.ToList();
@@ -109,11 +126,18 @@ namespace SnkrBot.Services
             if (string.IsNullOrEmpty(price) || price == "-" || price == "N/A")
                 return 0;
 
+            // Rimuovi tutto tranne numeri, punti e virgole
             string numericPrice = new string(price.Where(c => char.IsDigit(c) || c == '.' || c == ',').ToArray());
-            if (decimal.TryParse(numericPrice, out decimal result))
+
+            // Gestisci sia punti che virgole come separatori decimali
+            numericPrice = numericPrice.Replace(",", ".");
+
+            if (decimal.TryParse(numericPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal result))
                 return result;
 
             return 0;
         }
+
     }
+
 }

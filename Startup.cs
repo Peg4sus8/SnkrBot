@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using SnkrBot.Bots;
+using SnkrBot.CognitiveModels;
 using SnkrBot.Dialogs;
 
 namespace SnkrBot
@@ -42,9 +43,9 @@ namespace SnkrBot
             services.AddSingleton<ConversationState>();
 
             // Register LUIS recognizer
-            services.AddSingleton<FlightBookingRecognizer>();
+            services.AddSingleton<ShoeRecognizer>();
 
-            // Register the BookingDialog.
+            // Register the ShoeDialog.
             services.AddSingleton<ShoeDialog>();
 
             // The MainDialog that will be run by the bot.
@@ -54,10 +55,15 @@ namespace SnkrBot
             services.AddTransient<IBot, DialogAndWelcomeBot<MainDialog>>();
 
             // Registra ShoeService come singleton per mantenere la cache
-            services.AddSingleton<ShoeService>();
+            services.AddSingleton<Services.ShoeService>();
 
             // Aggiorna la registrazione di ShoeDialog per iniettare ShoeService
             services.AddTransient<ShoeDialog>();
+
+            services.AddTransient<MainDialog>();
+
+            // Assicurati che il logging sia configurato
+            services.AddLogging();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
