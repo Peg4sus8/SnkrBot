@@ -7,101 +7,140 @@ using CsvHelper;
 using System.Globalization;
 using SnkrBot.Models;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Data.SqlClient;
+using static Antlr4.Runtime.Atn.SemanticContext;
 
 namespace SnkrBot.Services
 {
     public class ShoeService
     {
-        private readonly string _csvPath;
-        private List<Shoe> _cachedShoes;
-        private DateTime _lastUpdate;
-        private readonly TimeSpan _updateInterval = TimeSpan.FromHours(1); // Aggiorna ogni ora
+        private readonly string connectionString;
 
-        public ShoeService(string csvPath = "shoes.csv")
+        public ShoeService(IConfiguration configuration)
         {
-            _csvPath = csvPath;
-            _cachedShoes = new List<Shoe>();
+            connectionString = configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING");
+
         }
 
-        public async Task<List<Shoe>> GetShoesAsync()
+        // Da modificare facendo query a db SELECT *
+        public async Task<List<Shoe>> GetAllShoesAsync()
         {
-            if (NeedsUpdate())
+            List<Shoe> shoes = new List<Shoe>();
+            
+            using (SqlConnection sqlConnection = new SqlConnection(connectionString))
             {
-                await UpdateShoesDataAsync();
-            }
-            return _cachedShoes;
-        }
+                await sqlConnection.OpenAsync();
+                Console.WriteLine("Connessione al DB avvenuta");
 
-        private bool NeedsUpdate()
-        {
-            return _cachedShoes.Count == 0 || DateTime.Now - _lastUpdate > _updateInterval;
-        }
-
-        private async Task UpdateShoesDataAsync()
-        {
-            try
-            {
-                // Esegui lo scraping solo se necessario
-                var links = ScrapingUtility.GetLinks("https://heat-mvmnt.de/releases");
-                var shoes = ScrapingUtility.GetCards(links);
-
-                // Salva i dati nel CSV
-                await SaveToCsvAsync(shoes);
-
-                // Aggiorna la cache
-                _cachedShoes = shoes.ToList();
-                _lastUpdate = DateTime.Now;
-            }
-            catch (Exception ex)
-            {
-                // Se lo scraping fallisce, prova a caricare dal CSV
-                _cachedShoes = await LoadFromCsvAsync();
-                if (!_cachedShoes.Any())
+                string query = "SELECT name, image_url, release, price FROM dbo.Snkr";
+                
+                using (SqlCommand command = new SqlCommand(query, sqlConnection))
                 {
-                    throw new Exception($"Error updating shoes data and no backup data available: {ex.Message}");
+                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            Shoe record = new Shoe
+                            {
+                                Name = reader.GetString(0), 
+                                Img = reader.GetString(1),
+                                Release = reader.GetString(2),
+                                Price = reader.GetString(3)
+                            };
+                            shoes.Add(record);
+                        }
+                    }
+
+                    Console.WriteLine($"--- Query executed successfully. Rows affected {shoes.Count()}");
                 }
             }
+
+            return shoes;
         }
 
-        private async Task SaveToCsvAsync(IEnumerable<Shoe> shoes)
+        // Da modificare facendo chiamata in base a se filtrare in base a BRAND o PREZZO oppure TUTTE
+        public async Task<List<Shoe>> GetFilteredShoesAsync(string brand = null, double? price = null)
         {
-            using var writer = new StreamWriter(_csvPath);
-            using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
-            await csv.WriteRecordsAsync(shoes);
+            if (!string.IsNullOrEmpty(brand))
+                return await GetShoesByBrandAsync(brand);
+            else if (!price.HasValue)
+                return await GetShoesByPriceAsync((double)price);
+            else
+                return await GetAllShoesAsync();
         }
-
-        private async Task<List<Shoe>> LoadFromCsvAsync()
+        // GetShoesByBrand
+        public async Task<List<Shoe>> GetShoesByBrandAsync(string brand)
         {
-            if (!File.Exists(_csvPath))
-                return new List<Shoe>();
+            List<Shoe> shoes = new List<Shoe>();
 
-            using var reader = new StreamReader(_csvPath);
-            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            using (SqlConnection sqlConnection = new SqlConnection(connectionString))
+            {
+                await sqlConnection.OpenAsync();
+                Console.WriteLine("Connessione al DB avvenuta");
 
-            // Leggi i record in modo sincrono ma wrappa in Task per mantenere l'interfaccia asincrona
-            return await Task.FromResult(csv.GetRecords<Shoe>().ToList());
+                string query = "SELECT name, image_url, release, price FROM dbo.Snkr WHERE name LIKE '@Filter%'";
+
+                using (SqlCommand command = new SqlCommand(query, sqlConnection))
+                {
+                    command.Parameters.AddWithValue("@Filter", $"%{brand}%");
+                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            Shoe record = new Shoe
+                            {
+                                Name = reader.GetString(0),
+                                Img = reader.GetString(1),
+                                Release = reader.GetString(2),
+                                Price = reader.GetString(3)
+                            };
+                            shoes.Add(record);
+                        }
+                    }
+
+                    Console.WriteLine($"--- Query executed successfully. Rows affected {shoes.Count()}");
+                }
+            }
+
+            return shoes;
         }
 
-        public async Task<List<Shoe>> GetFilteredShoesAsync(string brand = null, double? maxPrice = null)
+        // GetShoesByPrice
+        public async Task<List<Shoe>> GetShoesByPriceAsync(double price)
         {
-           var shoes = await GetShoesAsync();
+            List<Shoe> shoes = new List<Shoe>();
 
-            return shoes.Where(shoe => string.IsNullOrEmpty(brand) || shoe.Name.ToLower().Contains(brand.ToLower())) // Filtra per brand
-                .Where(shoe => !maxPrice.HasValue || (ParsePrice(shoe.Price) is double shoePrice && shoePrice <= maxPrice)
-                    ).ToList();
+            using (SqlConnection sqlConnection = new SqlConnection(connectionString))
+            {
+                await sqlConnection.OpenAsync();
+                Console.WriteLine("Connessione al DB avvenuta");
+
+                string query = "SELECT name, image_url, release, price FROM dbo.Snkr WHERE price < '@Filter'";
+
+                using (SqlCommand command = new SqlCommand(query, sqlConnection))
+                {
+                    command.Parameters.AddWithValue("@Filter", $"%{price}%");
+                    using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            Shoe record = new Shoe
+                            {
+                                Name = reader.GetString(0),
+                                Img = reader.GetString(1),
+                                Release = reader.GetString(2),
+                                Price = reader.GetString(3)
+                            };
+                            shoes.Add(record);
+                        }
+                    }
+
+                    Console.WriteLine($"--- Query executed successfully. Rows affected {shoes.Count()}");
+                }
+            }
+
+            return shoes;
         }
-        
-        double? ParsePrice(string price)
-        {
-            if (string.IsNullOrWhiteSpace(price)) return null;
-
-            // Rimuovi tutti i caratteri non numerici (incluso €)
-            var cleanedPrice = Regex.Replace(price, @"[^\d.,]", "").Trim();
-
-            // Converti il prezzo, gestendo virgole come separatori decimali
-            return double.TryParse(cleanedPrice.Replace(",", "."), out var result) ? result : null;
-        }
-
     }
-
 }

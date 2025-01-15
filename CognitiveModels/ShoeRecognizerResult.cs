@@ -3,18 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Bot.Builder;
 using Newtonsoft.Json;
- using Newtonsoft.Json.Linq;
 
 namespace SnkrBot.CognitiveModels
 {
-
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using Microsoft.Bot.Builder;
-    using Microsoft.Bot.Schema;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
 
     namespace SnkrBot.CognitiveModels
     {
