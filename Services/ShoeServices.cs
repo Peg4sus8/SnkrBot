@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using CsvHelper;
-using System.Globalization;
 using SnkrBot.Models;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Data.SqlClient;
-using static Antlr4.Runtime.Atn.SemanticContext;
 using Microsoft.Extensions.Logging;
 
 namespace SnkrBot.Services
