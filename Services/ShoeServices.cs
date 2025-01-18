@@ -29,6 +29,7 @@ namespace SnkrBot.Services
             {
                 await UpdateShoesDataAsync();
             }
+
             return _cachedShoes;
         }
 
