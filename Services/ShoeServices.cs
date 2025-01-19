@@ -72,7 +72,7 @@ namespace SnkrBot.Services
         {
             if (!string.IsNullOrEmpty(brand))
                 return await GetShoesByBrandAsync(brand);
-            else if (!price.HasValue)
+            else if (price.HasValue)
                 return await GetShoesByPriceAsync((double)price);
             else
                 return await GetAllShoesAsync();
@@ -88,7 +88,7 @@ namespace SnkrBot.Services
                     await sqlConnection.OpenAsync();
                     Console.WriteLine("Connessione al DB avvenuta");
 
-                    string query = "SELECT name, image_url, release, price FROM dbo.Snkr WHERE name LIKE '@Filter%'";
+                    string query = "SELECT name, image_url, release, price FROM dbo.Snkr WHERE name LIKE @Filter";
 
                     using (SqlCommand command = new SqlCommand(query, sqlConnection))
                     {
@@ -136,11 +136,11 @@ namespace SnkrBot.Services
                     await sqlConnection.OpenAsync();
                     Console.WriteLine("Connessione al DB avvenuta");
 
-                    string query = "SELECT name, image_url, release, price FROM dbo.Snkr WHERE price < '@Filter'";
+                    string query = "SELECT name, image_url, release, price FROM dbo.Snkr WHERE price < @Filter";
 
                     using (SqlCommand command = new SqlCommand(query, sqlConnection))
                     {
-                        command.Parameters.AddWithValue("@Filter", $"%{price}%");
+                        command.Parameters.AddWithValue("@Filter", $"{price}");
                         using (SqlDataReader reader = await command.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
