@@ -7,7 +7,6 @@ using System.Threading;
 using CsvHelper;
 using System.Globalization;
 using System.IO;
-
 using SnkrBot.Models;
 
 namespace SnkrBot.Services

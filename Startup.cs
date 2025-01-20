@@ -14,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using SnkrBot.Bots;
 using SnkrBot.CognitiveModels;
 using SnkrBot.Dialogs;
+using SnkrBot.Services;
 
 namespace SnkrBot
 {
@@ -55,7 +56,7 @@ namespace SnkrBot
             services.AddTransient<IBot, DialogAndWelcomeBot<MainDialog>>();
 
             // Registra ShoeService come singleton per mantenere la cache
-            services.AddSingleton<Services.ShoeService>();
+            services.AddSingleton<ShoeService>();
 
             // Aggiorna la registrazione di ShoeDialog per iniettare ShoeService
             services.AddTransient<ShoeDialog>();

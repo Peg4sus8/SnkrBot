@@ -19,9 +19,7 @@ namespace SnkrBot.Dialogs
         private readonly ShoeService _shoeService;
         private readonly ILogger<ShoeDialog> _logger;
 
-        public ShoeDialog(
-            ShoeService shoeService,
-            ILogger<ShoeDialog> logger) : base(nameof(ShoeDialog))
+        public ShoeDialog(ShoeService shoeService, ILogger<ShoeDialog> logger) : base(nameof(ShoeDialog))
         {
             _shoeService = shoeService;
             _logger = logger;

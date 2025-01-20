@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="AdaptiveCards.Templating" Version="2.0.4" />
+    <PackageReference Include="Azure.Identity" Version="1.13.2" />
     <PackageReference Include="Clu" Version="1.0.0" />
     <PackageReference Include="CsvHelper" Version="33.0.1" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.72" />
@@ -24,7 +25,12 @@
     <PackageReference Include="Microsoft.Bot.Builder.Dialogs" Version="4.22.9" />
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.22.9" />
     <PackageReference Include="Microsoft.Bot.Connector" Version="4.22.9" />
-    <PackageReference Include="Microsoft.Recognizers.Text.DataTypes.TimexExpression" Version="1.8.11" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Recognizers.Text.DataTypes.TimexExpression" Version="1.4.0" />
     <PackageReference Include="Selenium.WebDriver" Version="4.27.0" />
     <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="132.0.6834.8300" />
   </ItemGroup>

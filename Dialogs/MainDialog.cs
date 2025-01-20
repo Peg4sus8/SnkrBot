@@ -5,15 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
-using Microsoft.Bot.Builder.Dialogs.Choices;
 using Microsoft.Bot.Schema;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using SnkrBot.CognitiveModels;
 using SnkrBot.CognitiveModels.SnkrBot.CognitiveModels;
 using SnkrBot.Models;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace SnkrBot.Dialogs
 {
