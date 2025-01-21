@@ -28,7 +28,7 @@ namespace SnkrBot.CognitiveModels
                 try
                 {
                     // Log del JSON originale
-                    Console.WriteLine("JSON ricevuto:\n" + JsonConvert.SerializeObject(result, Formatting.Indented));
+                    //Console.WriteLine("JSON ricevuto:\n" + JsonConvert.SerializeObject(result, Formatting.Indented));
 
                     // Deserializza il JSON nella classe ShoeRecognizerResult
                     var deserialized = JsonConvert.DeserializeObject<ShoeRecognizerResult>(JsonConvert.SerializeObject(result));

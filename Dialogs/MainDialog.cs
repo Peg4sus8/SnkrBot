@@ -82,7 +82,7 @@ namespace SnkrBot.Dialogs
                 }
 
                 (ShoeRecognizerResult.Intent intent, double score) = cluResult.TopIntent();
-                Console.WriteLine($"Intent rilevato: {intent}, Punteggio: {score}");
+                //Console.WriteLine($"Intent rilevato: {intent}, Punteggio: {score}");
 
                 if (string.IsNullOrEmpty(intent.ToString()))
                 {

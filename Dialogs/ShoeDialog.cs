@@ -59,7 +59,7 @@ namespace SnkrBot.Dialogs
             catch (Exception ex)
             {
                 await stepContext.Context.SendActivityAsync(
-                    "Mi dispiace, si è verificato un errore durante il recupero delle scarpe. Riprova più tardi.",
+                    $"Mi dispiace, si è verificato un errore durante il recupero delle scarpe. Riprova più tardi.{ex.Message}",
                     cancellationToken: cancellationToken);
 
                 _logger.LogError(ex, "Errore durante il recupero delle scarpe");
