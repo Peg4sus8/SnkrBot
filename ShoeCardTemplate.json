@@ -24,7 +24,7 @@
     },
     {
       "type": "TextBlock",
-      "text": "Price: ${price}",
+      "text": "Price: ${price} €",
       "wrap": true
     }
   ],

@@ -78,7 +78,7 @@ namespace SnkrBot.Dialogs
                 name = shoe.Name,
                 image = shoe.Img ?? "",
                 releaseDate = shoe.Release ?? "N/A",
-                price = ((shoe.Price.Equals("-", System.StringComparison.Ordinal)) ? "N/A" : shoe.Price)
+                price = shoe.Price 
             };
             var cardJson = template.Expand(data);
 

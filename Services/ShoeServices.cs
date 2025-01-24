@@ -45,7 +45,7 @@ namespace SnkrBot.Services
                                     Name = reader.GetString(0), 
                                     Img = reader.GetString(1),
                                     Release = reader.GetString(2),
-                                    Price = reader.GetString(3)
+                                    Price = reader.GetInt32(3)
                                 };
                                 shoes.Add(record);
                             }
@@ -103,7 +103,7 @@ namespace SnkrBot.Services
                                     Name = reader.GetString(0),
                                     Img = reader.GetString(1),
                                     Release = reader.GetString(2),
-                                    Price = reader.GetString(3)
+                                    Price = reader.GetInt32(3)
                                 };
                                 shoes.Add(record);
                             }
@@ -151,7 +151,7 @@ namespace SnkrBot.Services
                                     Name = reader.GetString(0),
                                     Img = reader.GetString(1),
                                     Release = reader.GetString(2),
-                                    Price = reader.GetString(3)
+                                    Price = reader.GetInt32(3)
                                 };
                                 shoes.Add(record);
                             }
