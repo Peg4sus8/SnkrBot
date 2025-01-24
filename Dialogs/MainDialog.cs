@@ -49,13 +49,15 @@ namespace SnkrBot.Dialogs
                 return await stepContext.EndDialogAsync(null, cancellationToken);
             }
 
-            var messageText = stepContext.Options?.ToString() ??
+            /*var messageText = stepContext.Options?.ToString() ??
                 "Ciao! Sono il tuo assistente per la ricerca di scarpe. Posso aiutarti a:\n" +
                 "- Vedere tutte le scarpe disponibili\n" +
                 "- Cercare scarpe di un brand specifico (es. 'Mostrami le Nike')\n" +
                 "- Cercare scarpe in un range di prezzo (es. 'Scarpe di massimo 200€')\n" +
                 "Come posso aiutarti?";
-
+            */
+            var messageText = stepContext.Options?.ToString() ??
+                "Come posso aiutarti?";
             var promptMessage = MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput);
             var text = stepContext.Result?.ToString()?.Trim();
           

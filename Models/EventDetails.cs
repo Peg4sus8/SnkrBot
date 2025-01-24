@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Azure.Core;
+using System;
 
 namespace SnkrBot.Models
 {

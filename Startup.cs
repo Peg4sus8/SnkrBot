@@ -85,7 +85,7 @@ namespace SnkrBot
                     endpoints.MapControllers();
                 });
 
-            // app.UseHttpsRedirection();
+            app.UseHttpsRedirection();
         }
     }
 }

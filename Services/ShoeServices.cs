@@ -137,7 +137,7 @@ namespace SnkrBot.Services
                     await sqlConnection.OpenAsync();
                     Console.WriteLine("Connessione al DB avvenuta");
 
-                    string query = "SELECT name, image_url, release, price FROM dbo.Snkr WHERE price < @Filter";
+                    string query = "SELECT name, image_url, release, price FROM dbo.Snkr WHERE price <= @Filter";
 
                     using (SqlCommand command = new SqlCommand(query, sqlConnection))
                     {
