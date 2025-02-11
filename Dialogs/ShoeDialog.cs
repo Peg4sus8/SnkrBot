@@ -11,6 +11,7 @@ using AdaptiveCards.Templating;
 using System.IO;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 
 namespace SnkrBot.Dialogs
 {
@@ -50,16 +51,34 @@ namespace SnkrBot.Dialogs
                         cancellationToken: cancellationToken);
                 }
                 else
-                {
-                    var attachments = shoes.Select(shoe => CreateShoeCard(shoe)).ToList();
+                {   // card: MARKDOWN
+                    /*var attachments = shoes.Select(shoe => CreateSShoeCard(shoe)).ToList();
+                    foreach (var attachment in attachments) 
+                    {
+                        var reply = MessageFactory.Text(attachment);
+                        reply.TextFormat = "markdown";
+                        await stepContext.Context.SendActivityAsync(reply, cancellationToken);
+                    }
+
+                    // Card: ADAPTIVE
+                    var attachments = shoes.Select(shoe => CreateSShoeCard(shoe)).ToList();
                     var reply = MessageFactory.Carousel(attachments);
-                    await stepContext.Context.SendActivityAsync(reply, cancellationToken);
+                    await stepContext.Context.SendActivityAsync(reply, cancellationToken);*/
+
+                    // Card: Hero
+                    var attachments = shoes.Select(shoe => CreateShoeCard(shoe)).ToList();
+                    foreach (var attachment in attachments)
+                    {
+                        var reply = MessageFactory.Attachment(attachment.ToAttachment());
+                        await stepContext.Context.SendActivityAsync(reply, cancellationToken); 
+                    }
+                   
                 }
             }
             catch (Exception ex)
             {
                 await stepContext.Context.SendActivityAsync(
-                    $"Mi dispiace, si è verificato un errore durante il recupero delle scarpe. Riprova più tardi.{ex.Message}",
+                    $"Mi dispiace, si è verificato un errore durante il recupero delle scarpe. Riprova più tardi.",
                     cancellationToken: cancellationToken);
 
                 _logger.LogError(ex, "Errore durante il recupero delle scarpe");
@@ -69,7 +88,7 @@ namespace SnkrBot.Dialogs
         }
 
 
-        private Attachment CreateShoeCard(Shoe shoe)
+        private Attachment CreateAdaptiveCard(Shoe shoe)
         {
             var templateJson = File.ReadAllText("ShoeCardTemplate.json");
             var template = new AdaptiveCardTemplate(templateJson);
@@ -87,6 +106,31 @@ namespace SnkrBot.Dialogs
                 ContentType = "application/vnd.microsoft.card.adaptive",
                 Content = JObject.Parse(cardJson)
             };
+        }
+
+        private string CreateSShoeCard(Shoe shoe)
+        {
+
+            string markdownMessage = $"**{shoe.Name}**\n\n" +
+                                     $"![View Image]({shoe.Img})\n\n" +
+                                     $"Release Date: {shoe.Release}\n\n" +
+                                     $"Price: {shoe.Price} €";
+
+            return markdownMessage;
+        }
+
+        private static HeroCard CreateShoeCard(Shoe shoe)
+        {
+            var heroCard = new HeroCard
+            {
+                Title = shoe.Name,
+                Subtitle = shoe.Release,
+                Text = "Price: " + shoe.Price,
+                Images = new List<CardImage> { new CardImage(shoe.Img) },
+                Buttons = new List<CardAction> { new CardAction(ActionTypes.OpenUrl, "Get Started", value: "https://docs.microsoft.com/bot-framework") },
+            };
+
+            return heroCard;
         }
     }
 }
