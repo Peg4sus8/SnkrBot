@@ -12,6 +12,19 @@ using System.IO;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using Azure.Core;
+using Azure.Identity;
+using Newtonsoft.Json;
+using System.Net.Http.Headers;
+using System.Net.Http;
+using System.Text;
+using Microsoft.Graph;
+using Microsoft.Graph.Communications.Calls;
+using Microsoft.Graph.Models;
+using Attachment = Microsoft.Bot.Schema.Attachment;
+using System.Globalization;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Queue;
 
 namespace SnkrBot.Dialogs
 {
@@ -40,12 +53,12 @@ namespace SnkrBot.Dialogs
             {
                 // Cast di stepContext.Options a FilterDetails
                 var filterDetails = stepContext.Options as FilterDetails ?? new FilterDetails();
-
+                
                 // Usa il servizio per ottenere le scarpe filtrate
                 var shoes = await _shoeService.GetFilteredShoesAsync(filterDetails.Brand, filterDetails.MaxPrice);
 
                 if (!shoes.Any())
-                {
+                { 
                     await stepContext.Context.SendActivityAsync(
                         "Non ho trovato scarpe che corrispondono ai criteri di ricerca specificati.",
                         cancellationToken: cancellationToken);
@@ -66,7 +79,7 @@ namespace SnkrBot.Dialogs
                     await stepContext.Context.SendActivityAsync(reply, cancellationToken);*/
 
                     // Card: Hero
-                    var attachments = shoes.Select(shoe => CreateShoeCard(shoe)).ToList();
+                    var attachments = shoes.Select(shoe => CreateShoeCard(shoe, stepContext)).ToList();
                     foreach (var attachment in attachments)
                     {
                         var reply = MessageFactory.Attachment(attachment.ToAttachment());
@@ -86,8 +99,6 @@ namespace SnkrBot.Dialogs
 
             return await stepContext.EndDialogAsync(null, cancellationToken);
         }
-
-
         private Attachment CreateAdaptiveCard(Shoe shoe)
         {
             var templateJson = File.ReadAllText("ShoeCardTemplate.json");
@@ -119,18 +130,85 @@ namespace SnkrBot.Dialogs
             return markdownMessage;
         }
 
-        private static HeroCard CreateShoeCard(Shoe shoe)
+        private HeroCard CreateShoeCard(Shoe shoe, WaterfallStepContext stepContext)
         {
+            var userId = stepContext.Context.Activity.Id;
+            if (!string.IsNullOrEmpty(userId) )
+            {
+                _logger.LogInformation($"UserId rilevato: {userId}");
+            }
+            else
+            {
+                _logger.LogError($"UserId NON trovato: {userId}");
+            }
+           
             var heroCard = new HeroCard
             {
                 Title = shoe.Name,
                 Subtitle = shoe.Release,
                 Text = "Price: " + shoe.Price,
                 Images = new List<CardImage> { new CardImage(shoe.Img) },
-                Buttons = new List<CardAction> { new CardAction(ActionTypes.OpenUrl, "Get Started", value: "https://docs.microsoft.com/bot-framework") },
+                Buttons = new List<CardAction> {
+                    new CardAction(ActionTypes.PostBack, "Aggiungi al Calendario", value:$"{shoe.Name};{shoe.Release};{userId}")
+                   },
             };
 
             return heroCard;
         }
-    }
+
+        // Inizio gestione creazione eventi        
+        public static async Task CallPowerAutomateFlow(string messageContent, string sendDate, string userId)
+        {
+            // La URL generata dal trigger HTTP di Power Automate
+            string powerAutomateUrl = "https://prod-58.westeurope.logic.azure.com:443/workflows/5189fd5bdfdd4c6281c3d7571c09504b/triggers/manual/paths/invoke?api-version=2016-06-01";
+
+            // Crea un oggetto JSON con i dati da inviare
+            var data = new
+            {
+                messageContent = messageContent,
+                sendDate = formatDate(sendDate),
+                userId = userId  
+            };
+
+            string json = JsonConvert.SerializeObject(data);
+
+            using (var client = new HttpClient())
+            {
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                // Invio la richiesta HTTP POST al flusso di Power Automate
+                var response = await client.PostAsync(powerAutomateUrl, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Flusso attivato correttamente");
+                }
+                else
+                {
+                    Console.WriteLine("Errore nell'attivare il flusso");
+                }
+            }
+        }
+
+        public static DateTime? formatDate(string release)
+        {
+            string[] formati = { "dd MMM yyyy - HH:mm", "dd MMMM yyyy - HH:mm"};
+            CultureInfo[] cultures = { new CultureInfo("it-IT"), new CultureInfo("en-US"), new CultureInfo("de-DE") };
+            DateTime parsedDate;
+            /* 
+             * Creo una stringa "risultato
+             * rimuovo la prima parte in cui è indicato il giorno (es. "Do. "
+            */
+            foreach (CultureInfo culture in cultures)
+            {
+                if (DateTime.TryParseExact(release, formati, culture, DateTimeStyles.None, out parsedDate))
+                    { return parsedDate; }
+            }
+            
+            //string formattedDateTime = inputDateTime.ToString("yyyy-MM-ddTHH:mm:ss");
+            return null;
+        }
+
+        //-----------------
+    }    
 }

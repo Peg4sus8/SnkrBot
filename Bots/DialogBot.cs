@@ -9,6 +9,7 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
+using SnkrBot.Dialogs;
 
 namespace SnkrBot.Bots
 {
@@ -47,6 +48,26 @@ namespace SnkrBot.Bots
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             Logger.LogInformation("Running dialog with Message Activity.");
+
+            var activity = turnContext.Activity;
+
+            if (activity?.Type == ActivityTypes.Message)
+            {
+                // Verifica se l'utente ha premuto il pulsante
+                if (activity.Value != null)
+                {
+                    // Estrai il valore (dati passati dal pulsante)
+                    var value = activity.Value.ToString();
+                    var parts = value.Split(';');
+
+                    var shoeName = parts[0];  // Nome della scarpa
+                    var releaseDate = parts[1];  // Data di rilascio
+                    var userId = parts[2];  // ID dell'utente
+
+                    // Chiamata al flusso di Power Automate con i dati
+                    await SnkrBot.Dialogs.ShoeDialog.CallPowerAutomateFlow(shoeName, releaseDate, userId);
+                }
+            }
 
             // Run the Dialog with the new message Activity.
             await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);

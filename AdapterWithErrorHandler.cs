@@ -28,7 +28,7 @@ namespace SnkrBot
                 var errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.ExpectingInput);
                 await turnContext.SendActivityAsync(errorMessage);
 
-                errorMessageText = "To continue to run this bot, please fix the bot source code.";
+                errorMessageText = $"To continue to run this bot, please fix the bot source code. {exception.StackTrace}";
                 errorMessage = MessageFactory.Text(errorMessageText, errorMessageText, InputHints.ExpectingInput);
                 await turnContext.SendActivityAsync(errorMessage);
 
