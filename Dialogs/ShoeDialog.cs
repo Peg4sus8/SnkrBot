@@ -12,19 +12,9 @@ using System.IO;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using Azure.Core;
-using Azure.Identity;
 using Newtonsoft.Json;
-using System.Net.Http.Headers;
-using System.Net.Http;
-using System.Text;
-using Microsoft.Graph;
-using Microsoft.Graph.Communications.Calls;
-using Microsoft.Graph.Models;
 using Attachment = Microsoft.Bot.Schema.Attachment;
 using System.Globalization;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Queue;
 
 namespace SnkrBot.Dialogs
 {
@@ -132,16 +122,9 @@ namespace SnkrBot.Dialogs
 
         private HeroCard CreateShoeCard(Shoe shoe, WaterfallStepContext stepContext)
         {
-            var userId = stepContext.Context.Activity.Id;
-            if (!string.IsNullOrEmpty(userId) )
-            {
-                _logger.LogInformation($"UserId rilevato: {userId}");
-            }
-            else
-            {
-                _logger.LogError($"UserId NON trovato: {userId}");
-            }
-           
+            var conversationId = stepContext.Context.Activity.Conversation.Id;
+            var serviceUrl = stepContext.Context.Activity.ServiceUrl;
+
             var heroCard = new HeroCard
             {
                 Title = shoe.Name,
@@ -149,7 +132,14 @@ namespace SnkrBot.Dialogs
                 Text = "Price: " + shoe.Price,
                 Images = new List<CardImage> { new CardImage(shoe.Img) },
                 Buttons = new List<CardAction> {
-                    new CardAction(ActionTypes.PostBack, "Aggiungi al Calendario", value:$"{shoe.Name};{shoe.Release};{userId}")
+                    new CardAction(ActionTypes.PostBack, 
+                        "Aggiungi al Calendario", 
+                        value: JsonConvert.SerializeObject(new {
+                            shoeName = shoe.Name,
+                            release = shoe.Release,
+                            conversationId = conversationId,
+                            serviceUrl = serviceUrl
+                        }))
                    },
             };
 
@@ -157,57 +147,44 @@ namespace SnkrBot.Dialogs
         }
 
         // Inizio gestione creazione eventi        
-        public static async Task CallPowerAutomateFlow(string messageContent, string sendDate, string userId)
+        
+
+        public static DateTime formatDate(string release)
         {
-            // La URL generata dal trigger HTTP di Power Automate
-            string powerAutomateUrl = "https://prod-58.westeurope.logic.azure.com:443/workflows/5189fd5bdfdd4c6281c3d7571c09504b/triggers/manual/paths/invoke?api-version=2016-06-01";
+            release.Replace(":", " ");
+            string[] words = release.Split(' ');
 
-            // Crea un oggetto JSON con i dati da inviare
-            var data = new
+            switch (words[1])
             {
-                messageContent = messageContent,
-                sendDate = formatDate(sendDate),
-                userId = userId  
-            };
-
-            string json = JsonConvert.SerializeObject(data);
-
-            using (var client = new HttpClient())
-            {
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                // Invio la richiesta HTTP POST al flusso di Power Automate
-                var response = await client.PostAsync(powerAutomateUrl, content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine("Flusso attivato correttamente");
-                }
-                else
-                {
-                    Console.WriteLine("Errore nell'attivare il flusso");
-                }
-            }
+                case "Gen":
+                    words[1] = "01"; break;
+                case "Feb":
+                    words[1] = "02"; break;
+                case "März":
+                    words[1] = "03"; break;
+                case "Apr" or "April":
+                    words[1] = "04"; break;
+                case "Mai":
+                    words[1] = "05"; break;
+                case "Juni" or "Jun":
+                    words[1] = "06"; break;
+                case "Juli" or "Jul":
+                    words[1] = "07"; break;
+                case "Aug":
+                    words[1] = "08"; break;
+                case "Sep":
+                    words[1] = "09"; break;
+                case "Okt":
+                    words[1] = "10"; break;
+                case "Nov":
+                    words[1] = "11"; break;
+                case "Dez":
+                    words[1] = "12"; break;
+            }           
+        
+            return new DateTime(Int32.Parse(words[2]), Int32.Parse(words[1]), Int32.Parse(words[0])).AddHours(Int32.Parse(words[4])).AddMinutes(Int32.Parse(words[5]));
         }
 
-        public static DateTime? formatDate(string release)
-        {
-            string[] formati = { "dd MMM yyyy - HH:mm", "dd MMMM yyyy - HH:mm"};
-            CultureInfo[] cultures = { new CultureInfo("it-IT"), new CultureInfo("en-US"), new CultureInfo("de-DE") };
-            DateTime parsedDate;
-            /* 
-             * Creo una stringa "risultato
-             * rimuovo la prima parte in cui è indicato il giorno (es. "Do. "
-            */
-            foreach (CultureInfo culture in cultures)
-            {
-                if (DateTime.TryParseExact(release, formati, culture, DateTimeStyles.None, out parsedDate))
-                    { return parsedDate; }
-            }
-            
-            //string formattedDateTime = inputDateTime.ToString("yyyy-MM-ddTHH:mm:ss");
-            return null;
-        }
 
         //-----------------
     }    

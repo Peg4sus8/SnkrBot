@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
@@ -57,7 +56,7 @@ namespace SnkrBot.Dialogs
                 "Come posso aiutarti?";
             */
             var messageText = stepContext.Options?.ToString() ??
-                "Come posso aiutarti?";
+                "Ciao, come posso aiutarti?";
             var promptMessage = MessageFactory.Text(messageText, messageText, InputHints.ExpectingInput);
             var text = stepContext.Result?.ToString()?.Trim();
           
