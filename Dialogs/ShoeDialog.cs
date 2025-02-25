@@ -119,11 +119,30 @@ namespace SnkrBot.Dialogs
 
             return markdownMessage;
         }
-
         private HeroCard CreateShoeCard(Shoe shoe, WaterfallStepContext stepContext)
         {
-            var conversationId = stepContext.Context.Activity.Conversation.Id;
-            var serviceUrl = stepContext.Context.Activity.ServiceUrl;
+            // Parsing della data di rilascio
+            DateTime releaseDate;
+            if (!DateTime.TryParse(shoe.Release, out releaseDate))
+            {
+                //releaseDate = DateTime.Now.AddDays(7); // Data di fallback
+                releaseDate = formatDate(shoe.Release);
+            }
+
+            // Calcola la data di fine evento (1 ora dopo l'inizio)
+            var endTime = releaseDate.AddHours(1);
+
+            // Formatta le date per il deep link
+            
+            var startTimeStr = releaseDate.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
+            var endTimeStr = endTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+            // Creazione del deep link per l'evento del calendario
+            var subjectEncoded = Uri.EscapeDataString(shoe.Name + " Release");
+            var locationEncoded = Uri.EscapeDataString("Online Release");
+            var bodyEncoded = Uri.EscapeDataString($"Release delle {shoe.Name} a {shoe.Price}");
+
+            var calendarDeepLink = $"https://teams.microsoft.com/l/meeting/new?subject={subjectEncoded}&startTime={startTimeStr}&endTime={endTimeStr}&location={locationEncoded}&body={bodyEncoded}";
 
             var heroCard = new HeroCard
             {
@@ -132,60 +151,57 @@ namespace SnkrBot.Dialogs
                 Text = "Price: " + shoe.Price,
                 Images = new List<CardImage> { new CardImage(shoe.Img) },
                 Buttons = new List<CardAction> {
-                    new CardAction(ActionTypes.PostBack, 
-                        "Aggiungi al Calendario", 
-                        value: JsonConvert.SerializeObject(new {
-                            shoeName = shoe.Name,
-                            release = shoe.Release,
-                            conversationId = conversationId,
-                            serviceUrl = serviceUrl
-                        }))
-                   },
+                    new CardAction(
+                        ActionTypes.OpenUrl,
+                        "Aggiungi al Calendario",
+                        value: calendarDeepLink)
+                },
             };
 
             return heroCard;
         }
 
-        // Inizio gestione creazione eventi        
-        
-
         public static DateTime formatDate(string release)
         {
-            release.Replace(":", " ");
+            // Rimuovi i caratteri non necessari
+            release = release.Replace(":", " ").Replace(",", "").Trim();
+
+            // Suddividi la stringa in base agli spazi
             string[] words = release.Split(' ');
 
-            switch (words[1])
+            if (words.Length < 6)
             {
-                case "Gen":
-                    words[1] = "01"; break;
-                case "Feb":
-                    words[1] = "02"; break;
-                case "März":
-                    words[1] = "03"; break;
-                case "Apr" or "April":
-                    words[1] = "04"; break;
-                case "Mai":
-                    words[1] = "05"; break;
-                case "Juni" or "Jun":
-                    words[1] = "06"; break;
-                case "Juli" or "Jul":
-                    words[1] = "07"; break;
-                case "Aug":
-                    words[1] = "08"; break;
-                case "Sep":
-                    words[1] = "09"; break;
-                case "Okt":
-                    words[1] = "10"; break;
-                case "Nov":
-                    words[1] = "11"; break;
-                case "Dez":
-                    words[1] = "12"; break;
-            }           
-        
-            return new DateTime(Int32.Parse(words[2]), Int32.Parse(words[1]), Int32.Parse(words[0])).AddHours(Int32.Parse(words[4])).AddMinutes(Int32.Parse(words[5]));
+                throw new ArgumentException("La stringa di rilascio non è nel formato corretto.");
+            }
+
+            // Mappa dei mesi in tedesco
+            Dictionary<string, string> monthMapping = new Dictionary<string, string>
+            {
+                { "Gen", "01" }, { "Feb", "02" }, { "März", "03" }, { "Apr", "04" }, { "Mai", "05" },
+                { "Juni", "06" }, { "Jun", "06" }, { "Juli", "07" }, { "Jul", "07" }, { "Aug", "08" },
+                { "Sep", "09" }, { "Okt", "10" }, { "Nov", "11" }, { "Dez", "12" }
+            };
+
+            // Verifica che il mese sia valido e sostituisci con il numero del mese
+            if (!monthMapping.ContainsKey(words[1]))
+            {
+                throw new ArgumentException("Mese non valido: " + words[1]);
+            }
+
+            words[1] = monthMapping[words[1]];  // Sostituisce il mese con il numero del mese
+
+            // Creazione della data
+            int day = Int32.Parse(words[0]);
+            int month = Int32.Parse(words[1]);
+            int year = Int32.Parse(words[2]);
+            int hour = Int32.Parse(words[4]);
+            int minute = Int32.Parse(words[5]);
+
+            // Restituisci la data
+            return new DateTime(year, month, day, hour, minute, 0);
         }
 
 
         //-----------------
-    }    
+    }
 }
