@@ -16,20 +16,7 @@ SnkrBot è stato sviluppato utilizzando [Bot Framework](https://dev.botframework
 
 Il bot è strutturato secondo la seguente architettura:
 
-```
-SnkrBot/
-├── Dialogs/
-│   ├── MainDialog.cs     # Gestione del flusso principale di conversazione
-│   └── ShoeDialog.cs     # Dialog specifico per visualizzare le scarpe
-├── CognitiveModels/
-│   ├── ShoeRecognizer.cs        # Integrazione con Azure Language CLU
-│   └── ShoeRecognizerResult.cs  # Gestione risultati dell'analisi linguistica
-├── Models/
-│   ├── Shoe.cs           # Modello dati per le scarpe
-│   └── FilterDetails.cs  # Struttura per i filtri di ricerca
-└── Services/
-    └── ShoeService.cs    # Servizio per l'accesso ai dati delle scarpe
-```
+![Architetira](2.Architettura-SnkrBot.png)
 
 ## Intenti Supportati
 
@@ -168,7 +155,9 @@ Il bot permette agli utenti di aggiungere promemoria al calendario di Teams per 
   "CLUSubscriptionId": "Il tuo subscription ID"
 }
 ```
-
+6. Crea una risorsa 'Miicrosoft Entra Id' dal Marketplace di Azure
+7. Registra il bot all'interno della directory creata e inserisci i permessi Calendar.ReadWrite
+ 
 ## Esecuzione locale
 
 ```bash
@@ -196,10 +185,4 @@ dotnet run
 ## Distribuzione su Azure
 
 Per distribuire il bot su Azure, segui la documentazione ufficiale: [Distribuisci il tuo bot su Azure](https://aka.ms/azuredeployment)
-
-## Risorse utili
-
-- [Documentazione di Bot Framework](https://docs.botframework.com)
-- [Fondamenti dei Bot](https://docs.microsoft.com/azure/bot-service/bot-builder-basics?view=azure-bot-service-4.0)
-- [Dialoghi](https://docs.microsoft.com/it-it/azure/bot-service/bot-builder-concept-dialog?view=azure-bot-service-4.0)
-- [Comprensione del linguaggio con CLU](https://learn.microsoft.com/it-it/azure/cognitive-services/language-service/conversational-language-understanding/overview)
+Per accedere al bot tramite Microsoft Teams accedere con account istutuzionale UNISA al seguente link: Accedi al bot con Teams](https://teams.microsoft.com/l/chat/0/0?users=28:c13147d1-e352-4d6b-a6c0-5662494a81d5)
