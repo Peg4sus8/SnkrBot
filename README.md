@@ -184,5 +184,6 @@ dotnet run
 
 ## Distribuzione su Azure
 
-Per distribuire il bot su Azure, segui la documentazione ufficiale: [Distribuisci il tuo bot su Azure](https://aka.ms/azuredeployment)
+Per distribuire il bot su Azure, segui la documentazione ufficiale: [Distribuisci il tuo bot su Azure](https://aka.ms/azuredeployment).
+
 Per accedere al bot tramite Microsoft Teams accedere con account istutuzionale UNISA al seguente link: Accedi al bot con Teams](https://teams.microsoft.com/l/chat/0/0?users=28:c13147d1-e352-4d6b-a6c0-5662494a81d5)
